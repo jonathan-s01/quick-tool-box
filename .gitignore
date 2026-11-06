@@ -1,0 +1,15 @@
+# Your own settings and secrets
+.env
+
+# Made by setup.sh and the apps
+.setup-asked-*
+data/
+open-webui/
+documents/
+llm/
+bus-times/data/
+node_modules/
+
+# Other
+*.zip
+.DS_Store

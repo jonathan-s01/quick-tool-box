@@ -1,0 +1,13 @@
+.git
+node_modules
+data
+open-webui
+searxng
+documents
+llm
+.env
+*.zip
+.DS_Store
+bus-times
+bus-times-data
+.setup-asked-*

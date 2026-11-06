@@ -1,0 +1,13 @@
+# SearXNG settings for Open WebUI's web search. Starts from SearXNG's own defaults.
+# The secret key comes from SEARXNG_SECRET in .env.
+use_default_settings: true
+
+server:
+  limiter: false      # only Open WebUI uses it, from this server
+  image_proxy: false
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json            # Open WebUI needs JSON answers

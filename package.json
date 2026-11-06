@@ -1,0 +1,20 @@
+{
+  "name": "quick-tool-box",
+  "version": "1.13.0",
+  "description": "Simple, accessible web pages for command line tools, on your own Mac or home server.",
+  "type": "module",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "author": "Jonathan Sieswerda (https://github.com/jonathan-s01)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonathan-s01/quick-tool-box.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "check": "node scripts/check.mjs"
+  }
+}
