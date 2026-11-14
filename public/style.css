@@ -84,3 +84,5 @@ img.sig { max-width: 100%; height: auto; background: #fff; padding: 0.5rem; bord
 code.code { font-size: 1.4rem; letter-spacing: 0.08em; }
 .note { color: var(--muted); }
 input.wide, textarea { width: 100%; max-width: 40rem; }
+.offscreen { position: absolute; left: -999rem; }
+#sh-stores h3 { margin-top: 1.5rem; }

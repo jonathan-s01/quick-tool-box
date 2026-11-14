@@ -1,6 +1,6 @@
 {
   "name": "quick-tool-box",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "Simple, accessible web pages for command line tools, on your own Mac or home server.",
   "type": "module",
   "private": true,

@@ -14,6 +14,7 @@ import { menuLibrary } from './lib/menu-library.js';
 import { formsAndProfile, loginGate } from './lib/forms.js';
 import { statusPage } from './lib/status.js';
 import { findRoutes } from './lib/find.js';
+import { shoppingRoutes } from './lib/shopping.js';
 import { readFormData, readJson } from './lib/http.js';
 import { startJob, getJob, publicJob, resetWorkArea, removeWorkAreaSync, VIEWABLE } from './lib/jobs.js';
 
@@ -37,6 +38,8 @@ const STATIC = {
   '/static/app.js': ['public/app.js', 'text/javascript; charset=utf-8'],
   '/static/forms.js': ['public/forms.js', 'text/javascript; charset=utf-8'],
   '/static/find.js': ['public/find.js', 'text/javascript; charset=utf-8'],
+  '/static/shopping.js': ['public/shopping.js', 'text/javascript; charset=utf-8'],
+  '/static/shopping-core.js': ['public/shopping-core.js', 'text/javascript; charset=utf-8'],
 };
 
 const TYPES = {
@@ -220,6 +223,11 @@ async function handle(req, res) {
 
   if (p.startsWith('/find/')) {
     const handled = findRoutes(req, res, url, { send, messagePage });
+    if (handled !== false) return;
+  }
+
+  if (p === '/shopping' || p.startsWith('/shopping/') || p === '/api/shopping' || p.startsWith('/api/shopping/')) {
+    const handled = await shoppingRoutes(req, res, url, { send, json });
     if (handled !== false) return;
   }
 

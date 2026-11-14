@@ -630,8 +630,20 @@ helpers/pdf_doc.py model IN.pdf OUT.json writes a document as JSON: each page's 
 
 To add install hints for a new program, add it to the BREW list in lib/system.js.
 
+## Shopping list
+
+The Shopping list page (/shopping, also in the top menu) is one list shared by everyone who can reach Quick Tool Box. It is saved on the server in data/shopping/state.json, so it survives updates and restarts.
+
+- To buy: one list per store, in store order, with a checkbox per item and how many are left. Ticks are shared. "Hide ticked items" is only for your phone.
+- Add an item: pick a store, or leave it on Automatic to use the store it is listed under.
+- Done shopping: clears ticked items, meals and household picks. Ticked common items go back to in stock. Anything not ticked stays as a one-off item.
+- Other phones get changes within about 15 seconds. Without a connection, changes are kept on the phone and sent when it is back online.
+- Opening the page with no connection at all needs the https address (Caddy). Over plain http the page must already be open.
+- No login unless REQUIRE_LOGIN=1. Anyone on the allowed networks can use it.
+
 ## Changes
 
+- 1.14: Shared shopping list page (/shopping).
 - 1.13: Renamed from CLI Wrappers to Quick Tool Box. Speech to text works on the home server (whisper.cpp is built into the container; models are kept in data/whisper-models). Your network details moved to .env: ALLOWED_NETWORKS applies to Quick Tool Box and Bus times, LLM_BIND controls who can reach the AI models, and ./setup.sh asks for your addresses instead of assuming them. Bus times added (Edmonton, optional). iPhone shares use the header X-Quick-Tool-Box (X-CLI-Wrappers still works). Licensed under the AGPL.
 - 1.12: AI requests stream, show progress (reading, then words written) and wait their turn; the 5-minute timeout is gone; smaller pictures for the server; fast models (Qwen3 1.7B, Llama 3.2 3B, Gemma 3 1B); ./models.sh tune; thinking turned off on the server; Open WebUI extra requests off for new installs; mac/ollama-network.sh.
 - 1.11: llama.cpp with llama-swap on the server instead of Ollama; ./setup.sh does the whole installation and tuning; ./models.sh downloads models; Open WebUI connected to the server and the Mac; ./docs.sh for Open WebUI documents; the Mac's Ethernet and Wi-Fi addresses both tried.
