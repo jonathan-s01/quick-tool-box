@@ -3,7 +3,7 @@ import http from 'node:http';
 import { readFile, writeFile, rename, stat, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadGtfs, stopInfo, searchStops, nearStops, routeDetail } from './lib/gtfs.js';
+import { loadGtfs, stopInfo, searchStops, nearStops, routeDetail, routeStops } from './lib/gtfs.js';
 import { getRealtime } from './lib/rt.js';
 import { arrivals } from './lib/arrivals.js';
 import { localToUtc } from './lib/time.js';
@@ -171,6 +171,10 @@ async function handle(req, res) {
     return send(res, 200, nearStops(gtfs, lat, lon));
   }
   if (p === '/api/route') { if (needSchedule(res)) return; return send(res, 200, routeDetail(gtfs, q.get('q') || '')); }
+  if (p === '/api/route-stops') {
+    if (needSchedule(res)) return;
+    return send(res, 200, routeStops(gtfs, q.get('route') || '', q.get('stop') || ''));
+  }
   if (p === '/api/geocode') return send(res, 200, await geocode(q.get('q') || ''));
 
   if (p === '/api/saved' && req.method === 'GET') return send(res, 200, (await readSaved()).map(withInfo));

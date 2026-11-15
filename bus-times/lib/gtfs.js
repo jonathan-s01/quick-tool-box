@@ -281,6 +281,30 @@ export function routeDetail(g, q) {
   return out;
 }
 
+export function routeStops(g, routeName, stopCode) {
+  const stop = g.codeIndex.get(stopCode);
+  if (stop === undefined) return [];
+  const ids = g.routeByShort.get(routeName.trim().toLowerCase()) || [];
+  const out = [];
+  for (const id of ids) for (const p of g.routePatterns.get(id) || []) {
+    const occurrences = [];
+    for (let i = 0; i < p.stops.length; i++) if (p.stops[i] === stop) occurrences.push(i);
+    occurrences.forEach((at, i) => out.push({
+      route: g.routes.get(id).short,
+      headsign: p.headsign,
+      dir: p.dir,
+      trips: p.trips,
+      occurrence: i + 1,
+      occurrences: occurrences.length,
+      before: p.stops.slice(0, at).map((s) => stopInfo(g, s)),
+      stop: stopInfo(g, stop),
+      after: p.stops.slice(at + 1).map((s) => stopInfo(g, s)),
+    }));
+  }
+  out.sort((a, b) => a.dir.localeCompare(b.dir) || b.trips - a.trips);
+  return out;
+}
+
 export function serviceRuns(g, si, day) {
   const s = g.services[si];
   const k = dayKey(day);
