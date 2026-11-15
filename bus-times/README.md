@@ -5,6 +5,7 @@ A small page for Edmonton Transit Service (ETS) bus stops. It only works for Edm
 - Save stops and give them nicknames. Saved stops are kept on the server, so your phone and Mac share the same list.
 - Find stops by stop number, by name (for example "jasper 108"), by address or place, or near you.
 - Look up a route number to see every stop on it, in each direction.
+- On a stop page, click a bus to open its route at that stop, or choose a route to see the stops before and after it.
 - Look ahead to any date and time.
 - Times refresh every 30 seconds while the page is open (you can turn this off). The page shows how long ago the times were updated, and has a Refresh times button.
 - Buses only. LRT is left out.

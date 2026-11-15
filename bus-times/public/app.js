@@ -58,6 +58,31 @@
       h('a', { href: `#/stop/${encodeURIComponent(s.code)}` }, h('div', { class: 'title' }, s.label), h('div', { class: 'muted' }, stopLine(s))))));
   }
 
+  function showRouteSegments(segments, results, focusCurrent = false) {
+    let currentLink = null;
+    results.replaceChildren(...segments.flatMap((segment) => {
+      const title = segment.headsign ? `${segment.route} toward ${segment.headsign}` : `Route ${segment.route}`;
+      const occurrence = segment.occurrences > 1 ? ` (visit ${segment.occurrence} of ${segment.occurrences})` : '';
+      const stops = [...segment.before, segment.stop, ...segment.after];
+      const currentAt = segment.before.length;
+      return [
+        h('h3', null, `${title}${occurrence}`),
+        h('ol', { class: 'list route-stops' }, stops.map((s, i) => {
+          const current = i === currentAt;
+          const link = h('a', { href: `#/stop/${encodeURIComponent(s.code)}`, 'aria-current': current ? 'location' : null },
+            h('div', { class: 'title' }, s.label),
+            h('div', { class: 'muted' }, current ? `${stopLine(s)} · This stop` : stopLine(s)));
+          if (current && !currentLink) currentLink = link;
+          return h('li', { class: current ? 'current-stop' : null }, link);
+        })),
+      ];
+    }));
+    if (focusCurrent && currentLink) {
+      currentLink.focus({ preventScroll: true });
+      currentLink.scrollIntoView({ block: 'center' });
+    }
+  }
+
   function errorBox(err) { return h('p', { class: 'error', role: 'alert' }, err.message || String(err)); }
 
   // ------------------------------------------------------------ saved stops
@@ -99,6 +124,7 @@
   async function stopView(code, at) {
     const h1 = view(`Stop ${code}`);
     const meta = h('p', { class: 'muted' });
+    const routeArea = h('div');
     const updated = h('span', null, '');
     const refreshBtn = h('button', { type: 'button', class: 'primary' }, 'Refresh times');
     const autoBox = h('input', { type: 'checkbox', id: 'auto' });
@@ -160,13 +186,38 @@
       document.title = `${title} - Bus times`;
     }
 
+    function drawRouteSelector(stop) {
+      if (!stop.routes.length) {
+        routeArea.replaceChildren(h('h2', null, 'Stops on a route'), h('p', { class: 'muted' }, 'No routes are listed for this stop.'));
+        return;
+      }
+      const select = h('select', { id: 'route-at-stop' }, stop.routes.map((route) => h('option', { value: route }, route)));
+      const results = h('div');
+      const form = h('form', null,
+        h('label', { for: 'route-at-stop' }, 'Route'),
+        h('div', { class: 'row' }, select, h('button', { type: 'submit', class: 'primary' }, 'Show stops')));
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        results.replaceChildren(h('p', null, 'Loading route stops…'));
+        try {
+          const segments = await api(`/api/route-stops?route=${encodeURIComponent(select.value)}&stop=${encodeURIComponent(code)}`);
+          if (!segments.length) {
+            results.replaceChildren(h('p', { class: 'muted' }, `Route ${select.value} does not include this stop in the current schedule.`));
+            return;
+          }
+          showRouteSegments(segments, results);
+        } catch (err) { results.replaceChildren(errorBox(err)); }
+      });
+      routeArea.replaceChildren(h('h2', null, 'Stops on a route'), form, results);
+    }
+
     async function load(manual) {
       if (busy) return;
       busy = true;
       refreshBtn.disabled = true;
       try {
         const d = await api(`/api/stop/${encodeURIComponent(code)}${at ? `?at=${encodeURIComponent(at)}` : ''}`);
-        if (!lastLoad) { setTitle(d.stop); meta.textContent = stopLine(d.stop); drawSave(d.stop); }
+        if (!lastLoad) { setTitle(d.stop); meta.textContent = stopLine(d.stop); drawSave(d.stop); drawRouteSelector(d.stop); }
         if (d.lookAhead) listHead.textContent = `Buses from ${longFmt.format(d.at)}`;
         const showMissing = !d.lookAhead || Math.abs(d.at - d.now) < 3 * 3600e3;
         list.replaceChildren(...(d.arrivals.length ? d.arrivals.map((a) => {
@@ -176,8 +227,9 @@
           else if (a.estimated != null) est = h('span', { class: 'est' }, `Estimated ${fmtTime(a.estimated, d.at)}`);
           else if (showMissing) est = h('span', { class: 'muted' }, 'No estimate');
           return h('li', { class: 'bus' },
-            h('div', { class: 'title' }, `${a.route} ${a.headsign}`),
-            h('div', { class: 'times' }, h('span', null, `Scheduled ${fmtTime(a.scheduled, d.at)}`), est));
+            h('a', { href: `#/route/${encodeURIComponent(a.route)}?stop=${encodeURIComponent(code)}&headsign=${encodeURIComponent(a.headsign)}` },
+              h('div', { class: 'title' }, `${a.route} ${a.headsign}`),
+              h('div', { class: 'times' }, h('span', null, `Scheduled ${fmtTime(a.scheduled, d.at)}`), est)));
         }) : [h('li', null, 'No buses found.')]));
         const notes = [];
         if (d.stop.label.endsWith('*')) notes.push('* The direction is a best guess.');
@@ -202,7 +254,7 @@
     const status = h('div', { class: 'status' }, refreshBtn, updated);
     main.append(meta, status,
       at ? null : h('label', { class: 'check' }, autoBox, 'Refresh every 30 seconds'),
-      look, msg, listHead, list, note, saveArea);
+      look, routeArea, msg, listHead, list, note, saveArea);
 
     timers.push(setInterval(tick, 5000));
     if (!at) timers.push(setInterval(() => {
@@ -266,9 +318,24 @@
   }
 
   // ------------------------------------------------------------ route
-  function routeView(initial) {
-    view('Route');
+  function routeView(initial, context = {}) {
+    view(context.stop ? `Route ${initial} at stop ${context.stop}` : 'Route');
     const results = h('div');
+    if (initial && context.stop) {
+      results.append(h('p', { class: 'muted' }, 'Loading stops around your stop…'));
+      main.append(results);
+      api(`/api/route-stops?route=${encodeURIComponent(initial)}&stop=${encodeURIComponent(context.stop)}`)
+        .then((segments) => {
+          const matching = context.headsign ? segments.filter((s) => s.headsign === context.headsign) : segments;
+          if (!matching.length) {
+            results.replaceChildren(h('p', { class: 'muted' }, `Route ${initial} does not include this stop in the current schedule.`));
+            return;
+          }
+          showRouteSegments(matching, results, true);
+        })
+        .catch((err) => results.replaceChildren(errorBox(err)));
+      return;
+    }
     const q = h('input', { type: 'search', id: 'q-route', autocomplete: 'off', inputmode: 'numeric', enterkeyhint: 'search', value: initial || '' });
     const form = h('form', { role: 'search' }, h('label', { for: 'q-route' }, 'Route number'), h('div', { class: 'row' }, q, h('button', { type: 'submit', class: 'primary' }, 'Show route')));
     const search = async (focus) => {
@@ -297,12 +364,17 @@
 
   // ------------------------------------------------------------ router
   function route() {
-    const hash = decodeURIComponent(location.hash.slice(1) || '/');
-    const [p, query] = hash.split('?');
-    const parts = p.split('/').filter(Boolean);
+    const hash = location.hash.slice(1) || '/';
+    const question = hash.indexOf('?');
+    const path = question < 0 ? hash : hash.slice(0, question);
+    const query = question < 0 ? '' : hash.slice(question + 1);
+    const parts = path.split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'stop' && parts[1]) return stopView(parts[1], new URLSearchParams(query || '').get('at'));
     if (parts[0] === 'find') return findView();
-    if (parts[0] === 'route') return routeView(parts[1]);
+    if (parts[0] === 'route') {
+      const params = new URLSearchParams(query || '');
+      return routeView(parts[1], { stop: params.get('stop'), headsign: params.get('headsign') });
+    }
     return savedView();
   }
   window.addEventListener('hashchange', route);
